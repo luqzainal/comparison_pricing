@@ -1,0 +1,25 @@
+{
+  "name": "CompareHarga - Bandingkan Harga Shopee & Lazada",
+  "short_name": "CompareHarga",
+  "description": "Platform perbandingan harga terbaik untuk membantu anda menjimatkan wang dengan membandingkan harga produk di Shopee dan Lazada",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["shopping", "utilities", "productivity"],
+  "lang": "ms",
+  "dir": "ltr"
+} 

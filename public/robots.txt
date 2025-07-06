@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://compareharga.com/sitemap.xml
+
+# Disallow admin and API routes
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_nuxt/
+Disallow: /_ipx/
+
+# Allow important pages
+Allow: /
+Allow: /search
+Allow: /product/
+
+# Crawl delay
+Crawl-delay: 1
