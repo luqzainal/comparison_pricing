@@ -7,4 +7,12 @@ export default defineNuxtRouteMiddleware((to, from) => {
   if (!authStore.isAuthenticated) {
     return navigateTo('/auth/login')
   }
+
+  // Jika pengguna bukan admin, redirect ke halaman utama
+  if (!authStore.isAdmin) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Akses ditolak - Perlu kebenaran admin'
+    })
+  }
 }) 

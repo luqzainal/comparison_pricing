@@ -180,15 +180,16 @@ const performSearch = async () => {
     };
     
     // Remove empty params
+    const cleanedParams = {}
     Object.keys(queryParams).forEach(key => {
-      if (queryParams[key] === null || queryParams[key] === '') {
-        delete queryParams[key];
+      if (queryParams[key] !== null && queryParams[key] !== '') {
+        cleanedParams[key] = queryParams[key]
       }
-    });
+    })
 
     const response = await $fetch('/api/search', {
       method: 'GET',
-      params: queryParams
+      params: cleanedParams
     });
     
     if (response.success) {

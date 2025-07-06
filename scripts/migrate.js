@@ -48,13 +48,28 @@ async function createIndexes() {
     
     // User indexes
     await mongoose.connection.db.collection('users').createIndex(
-      { googleId: 1 },
-      { unique: true, name: 'user_google_id' }
+      { email: 1 },
+      { unique: true, name: 'user_email' }
     )
     
     await mongoose.connection.db.collection('users').createIndex(
-      { email: 1 },
-      { unique: true, name: 'user_email' }
+      { role: 1 },
+      { name: 'user_role' }
+    )
+    
+    await mongoose.connection.db.collection('users').createIndex(
+      { emailVerificationToken: 1 },
+      { name: 'user_email_verification_token' }
+    )
+    
+    await mongoose.connection.db.collection('users').createIndex(
+      { passwordResetToken: 1 },
+      { name: 'user_password_reset_token' }
+    )
+    
+    await mongoose.connection.db.collection('users').createIndex(
+      { passwordResetExpires: 1 },
+      { name: 'user_password_reset_expires' }
     )
     
     await mongoose.connection.db.collection('users').createIndex(
@@ -114,6 +129,36 @@ async function updateSchema() {
       { priceAlerts: { $exists: false } },
       { $set: { priceAlerts: [] } }
     )
+    
+    // Add new auth-related fields to existing users
+    await mongoose.connection.db.collection('users').updateMany(
+      { role: { $exists: false } },
+      { $set: { role: 'user' } }
+    )
+    
+    await mongoose.connection.db.collection('users').updateMany(
+      { isVerified: { $exists: false } },
+      { $set: { isVerified: false } } // Email users need to verify
+    )
+    
+    // Remove Google-specific fields if they exist
+    await mongoose.connection.db.collection('users').updateMany(
+      { googleId: { $exists: true } },
+      { $unset: { googleId: "" } }
+    )
+    
+    // Set first user as admin if no admin exists
+    const adminExists = await mongoose.connection.db.collection('users').countDocuments({ role: 'admin' })
+    if (adminExists === 0) {
+      const firstUser = await mongoose.connection.db.collection('users').findOne({}, { sort: { createdAt: 1 } })
+      if (firstUser) {
+        await mongoose.connection.db.collection('users').updateOne(
+          { _id: firstUser._id },
+          { $set: { role: 'admin' } }
+        )
+        console.log(`✅ Set first user (${firstUser.email}) as admin`)
+      }
+    }
     
     console.log('✅ Database schema updated successfully')
   } catch (error) {

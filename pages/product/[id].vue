@@ -42,14 +42,10 @@
               <button 
                 @click="openAlertModal" 
                 class="w-full btn-primary flex items-center justify-center space-x-2"
-                :disabled="status !== 'authenticated'"
               >
                 <BellIcon class="h-5 w-5" />
                 <span>Set Alert Harga</span>
               </button>
-              <p v-if="status !== 'authenticated'" class="text-xs text-gray-500 mt-2 text-center">
-                Sila <button @click="signIn('google')" class="text-blue-600 hover:underline">log masuk</button> untuk set alert.
-              </p>
             </div>
           </div>
         </div>
@@ -133,12 +129,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import PriceHistoryGraph from '~/components/PriceHistoryGraph.vue'
+import { ref, computed } from 'vue'
 import { BellIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 
-const { status, signIn } = useAuth()
 const route = useRoute()
 const productId = route.params.id
 
@@ -182,7 +176,7 @@ async function handleSetAlert() {
   }
   
   try {
-    const response = await $fetch('/api/alerts', {
+    await $fetch('/api/alerts', {
       method: 'POST',
       body: {
         productId: productId,

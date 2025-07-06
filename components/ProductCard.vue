@@ -87,20 +87,6 @@
         </div>
       </div>
       
-      <!-- Favorite Button -->
-      <button
-        v-if="authStore.isAuthenticated"
-        @click="toggleFavorite"
-        :disabled="favoriteLoading"
-        class="absolute top-2 right-2 p-2 bg-white rounded-full shadow-sm hover:bg-gray-50 transition-colors"
-        :class="{ 'text-red-500': isFavorite, 'text-gray-400': !isFavorite }"
-      >
-        <HeartIcon 
-          class="h-5 w-5" 
-          :class="{ 'fill-current': isFavorite }"
-        />
-      </button>
-
       <!-- Overall Best Price Badge -->
       <div v-if="bestPlatform" class="absolute top-2 left-2">
         <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center">
@@ -357,7 +343,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="w-full btn-primary text-center py-3 flex items-center justify-center space-x-2 relative overflow-hidden group"
-            @click="trackClick(bestPlatform, 'primary')"
+            @click="trackClick(bestPlatform, getOptimizedLink(bestPlatform))"
           >
             <div class="flex items-center space-x-2">
               <div :class="[
@@ -386,7 +372,7 @@
               target="_blank"
               rel="noopener noreferrer"
               class="btn-outline text-center py-2 text-sm bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 flex items-center justify-center space-x-1"
-              @click="trackClick('shopee', 'secondary')"
+              @click="trackClick('shopee', getOptimizedLink('shopee'))"
             >
               <div class="w-4 h-4 bg-orange-500 rounded text-white text-xs font-bold flex items-center justify-center">
                 S
@@ -403,7 +389,7 @@
               target="_blank"
               rel="noopener noreferrer"
               class="btn-outline text-center py-2 text-sm bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 flex items-center justify-center space-x-1"
-              @click="trackClick('lazada', 'secondary')"
+              @click="trackClick('lazada', getOptimizedLink('lazada'))"
             >
               <div class="w-4 h-4 bg-blue-500 rounded text-white text-xs font-bold flex items-center justify-center">
                 L
@@ -421,7 +407,7 @@
               target="_blank"
               rel="noopener noreferrer"
               class="btn-outline text-center py-2 text-sm bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 flex items-center justify-center space-x-1"
-              @click="trackClick('shopee', 'equal')"
+              @click="trackClick('shopee', getOptimizedLink('shopee'))"
             >
               <div class="w-4 h-4 bg-orange-500 rounded text-white text-xs font-bold flex items-center justify-center">
                 S
@@ -435,7 +421,7 @@
               target="_blank"
               rel="noopener noreferrer"
               class="btn-outline text-center py-2 text-sm bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 flex items-center justify-center space-x-1"
-              @click="trackClick('lazada', 'equal')"
+              @click="trackClick('lazada', getOptimizedLink('lazada'))"
             >
               <div class="w-4 h-4 bg-blue-500 rounded text-white text-xs font-bold flex items-center justify-center">
                 L
@@ -600,12 +586,11 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import {
-  HeartIcon,
-  StarIcon,
-  PhotoIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
+import { 
+  StarIcon, 
+  MapPinIcon, 
+  TruckIcon, 
+  ShieldCheckIcon,
   ChevronDownIcon
 } from '@heroicons/vue/24/outline'
 import { preloadImages, isValidImageUrl, getOptimizedImageUrl } from '~/utils/imageUtils'
@@ -619,10 +604,7 @@ const props = defineProps({
 })
 
 // Emits
-const emit = defineEmits(['click', 'favorite-toggle', 'link-click'])
-
-// Store
-const authStore = useAuthStore()
+const emit = defineEmits(['track-click', 'add-to-wishlist'])
 
 // State
 const favoriteLoading = ref(false)
@@ -634,9 +616,25 @@ const touchEndX = ref(0)
 const showSpecifications = ref(false)
 
 // Computed
+const lowestPrice = computed(() => {
+  const prices = []
+  if (props.product.platforms?.shopee?.price) {
+    prices.push(props.product.platforms.shopee.price)
+  }
+  if (props.product.platforms?.lazada?.price) {
+    prices.push(props.product.platforms.lazada.price)
+  }
+  return prices.length > 0 ? Math.min(...prices) : 0
+})
+
+const isShopeeLowest = computed(() => {
+  const shopeePrice = props.product.platforms?.shopee?.price || Infinity
+  const lazadaPrice = props.product.platforms?.lazada?.price || Infinity
+  return shopeePrice <= lazadaPrice
+})
+
 const isFavorite = computed(() => {
-  if (!authStore.userProfile?.favoriteProducts) return false
-  return authStore.userProfile.favoriteProducts.some(fav => fav.productId === props.product._id)
+  return false // Always false since no auth
 })
 
 const priceDifference = computed(() => {
@@ -674,13 +672,6 @@ const hasValidLinks = computed(() => {
   const shopeeValid = props.product.platforms?.shopee?.url && isValidUrl(props.product.platforms.shopee.url)
   const lazadaValid = props.product.platforms?.lazada?.url && isValidUrl(props.product.platforms.lazada.url)
   return { shopee: shopeeValid, lazada: lazadaValid }
-})
-
-const availablePlatforms = computed(() => {
-  const platforms = []
-  if (hasValidLinks.value.shopee) platforms.push('shopee')
-  if (hasValidLinks.value.lazada) platforms.push('lazada')
-  return platforms
 })
 
 const hasSpecifications = computed(() => {
@@ -1042,29 +1033,12 @@ const toggleSpecifications = () => {
 }
 
 const viewDetails = () => {
-  emit('click', props.product)
+  emit('track-click', {
+    productId: props.product._id,
+    platform: bestPlatform.value,
+    url: getOptimizedLink(bestPlatform.value)
+  })
   navigateTo(`/product/${props.product._id}`)
-}
-
-const toggleFavorite = async () => {
-  if (!authStore.isAuthenticated) {
-    // Redirect to login or show login modal
-    return
-  }
-
-  favoriteLoading.value = true
-  try {
-    if (isFavorite.value) {
-      await authStore.removeFromFavorites(props.product._id)
-    } else {
-      await authStore.addToFavorites(props.product._id)
-    }
-    emit('favorite-toggle', props.product, !isFavorite.value)
-  } catch (error) {
-    console.error('Error toggling favorite:', error)
-  } finally {
-    favoriteLoading.value = false
-  }
 }
 
 const getOptimizedLink = (platform) => {
@@ -1107,72 +1081,13 @@ const getOptimizedLink = (platform) => {
   }
 }
 
-const trackClick = async (platform, clickType = 'default') => {
-  const trackingData = {
+const trackClick = (platform, url) => {
+  emit('track-click', {
     productId: props.product._id,
-    productName: props.product.name,
     platform,
-    clickType,
-    price: props.product.platforms?.[platform]?.price,
-    isBestPrice: bestPlatform.value === platform,
-    userId: authStore.userProfile?.id,
-    sessionId: authStore.sessionId,
-    timestamp: new Date().toISOString(),
-    userAgent: navigator.userAgent,
-    referrer: document.referrer
-  }
-  
-  // Track in console for development
-  console.log(`User clicked ${platform} link (${clickType}) for product:`, trackingData)
-  
-  // Store in local analytics (for offline capability)
-  try {
-    const analytics = JSON.parse(localStorage.getItem('clickAnalytics') || '[]')
-    analytics.push(trackingData)
-    
-    // Keep only last 100 clicks to prevent storage bloat
-    if (analytics.length > 100) {
-      analytics.splice(0, analytics.length - 100)
-    }
-    
-    localStorage.setItem('clickAnalytics', JSON.stringify(analytics))
-  } catch (error) {
-    console.warn('Failed to store click analytics locally:', error)
-  }
-  
-  // Send to backend analytics (with retry logic)
-  try {
-    await $fetch('/api/analytics/click', {
-      method: 'POST',
-      body: trackingData,
-      timeout: 5000 // 5 second timeout
-    })
-  } catch (error) {
-    console.warn('Failed to send click analytics to server:', error)
-    // Could implement retry queue here
-  }
-  
-  // Track in user's click history if authenticated
-  if (authStore.isAuthenticated) {
-    try {
-      await authStore.addToClickHistory({
-        productId: props.product._id,
-        platform,
-        clickType,
-        price: props.product.platforms?.[platform]?.price,
-        timestamp: new Date()
-      })
-    } catch (error) {
-      console.warn('Failed to update user click history:', error)
-    }
-  }
-  
-  // Emit event for parent components
-  emit('link-click', {
-    platform,
-    clickType,
-    product: props.product
+    url
   })
+  window.open(url, '_blank')
 }
 </script>
 

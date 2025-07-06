@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -40,9 +40,8 @@ ChartJS.register(
 
 const props = defineProps({
   historyData: {
-    type: Object,
-    required: true,
-    default: () => ({ shopee: [], lazada: [] })
+    type: Array,
+    default: () => []
   },
   isLoading: {
     type: Boolean,

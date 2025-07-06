@@ -1,11 +1,6 @@
 import mongoose from 'mongoose'
 
 const userSchema = new mongoose.Schema({
-  googleId: {
-    type: String,
-    required: true,
-    unique: true
-  },
   email: {
     type: String,
     required: true,
@@ -17,6 +12,28 @@ const userSchema = new mongoose.Schema({
   },
   picture: {
     type: String
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: {
+    type: String
+  },
+  passwordResetToken: {
+    type: String
+  },
+  passwordResetExpires: {
+    type: Date
   },
   searchHistory: [{
     query: String,
@@ -61,8 +78,11 @@ const userSchema = new mongoose.Schema({
 })
 
 // Index untuk performance
-userSchema.index({ googleId: 1 })
 userSchema.index({ email: 1 })
+userSchema.index({ role: 1 })
+userSchema.index({ emailVerificationToken: 1 })
+userSchema.index({ passwordResetToken: 1 })
+userSchema.index({ passwordResetExpires: 1 })
 userSchema.index({ 'searchHistory.timestamp': -1 })
 
 export default mongoose.models.User || mongoose.model('User', userSchema) 

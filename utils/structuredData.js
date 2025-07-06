@@ -27,11 +27,28 @@ export function generateOrganizationSchema(config) {
   }
 }
 
-export function generateProductSchema(product, config) {
-  const offers = []
-  
-  if (product.platforms?.shopee?.price) {
-    offers.push({
+/**
+ * Generates structured data for product pages
+ * @param {Object} product - Product data
+ * @returns {Object} JSON-LD structured data
+ */
+export function generateProductStructuredData(product) {
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description || '',
+    image: product.images?.[0] || '',
+    brand: {
+      '@type': 'Brand',
+      name: product.brand || 'Unknown'
+    },
+    offers: []
+  }
+
+  // Add Shopee offer if available
+  if (product.platforms?.shopee) {
+    structuredData.offers.push({
       '@type': 'Offer',
       price: product.platforms.shopee.price,
       priceCurrency: 'MYR',
@@ -43,9 +60,10 @@ export function generateProductSchema(product, config) {
       url: product.platforms.shopee.url
     })
   }
-  
-  if (product.platforms?.lazada?.price) {
-    offers.push({
+
+  // Add Lazada offer if available
+  if (product.platforms?.lazada) {
+    structuredData.offers.push({
       '@type': 'Offer',
       price: product.platforms.lazada.price,
       priceCurrency: 'MYR',
@@ -58,24 +76,7 @@ export function generateProductSchema(product, config) {
     })
   }
 
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product.name,
-    description: product.description,
-    image: product.images,
-    brand: {
-      '@type': 'Brand',
-      name: product.brand
-    },
-    category: product.category,
-    offers: offers,
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: product.bestPrice?.rating || 0,
-      reviewCount: product.bestPrice?.reviewCount || 0
-    }
-  }
+  return structuredData
 }
 
 export function generateBreadcrumbSchema(breadcrumbs, config) {

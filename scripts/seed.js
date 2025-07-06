@@ -1,13 +1,11 @@
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
-
-// Load environment variables
-dotenv.config()
-
-// Import models
 import Product from '../server/models/Product.js'
 import User from '../server/models/User.js'
 import PriceHistory from '../server/models/PriceHistory.js'
+
+// Load environment variables
+dotenv.config()
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/compare-harga'
 

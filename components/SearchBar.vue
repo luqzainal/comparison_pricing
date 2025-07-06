@@ -114,12 +114,10 @@ const emit = defineEmits(['search', 'suggestion-selected'])
 // Refs
 const searchInput = ref(null)
 const searchQuery = ref('')
+const searchSuggestions = ref([])
 const showSuggestions = ref(false)
 const isLoading = ref(false)
 const selectedIndex = ref(-1)
-
-// Store
-const authStore = useAuthStore()
 
 // Popular search suggestions (static for now, can be loaded from API later)
 const popularSearches = ref([
@@ -252,11 +250,6 @@ const performSearch = async () => {
   isLoading.value = true
 
   try {
-    // Add to search history if user is authenticated
-    if (authStore.isAuthenticated) {
-      await authStore.addToSearchHistory(query)
-    }
-
     // Emit search event
     emit('search', query)
 

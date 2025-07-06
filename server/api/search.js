@@ -1,18 +1,10 @@
 import Product from '~/server/models/Product'
 import connectDB from '~/server/utils/database'
-import { getRandomProducts, sampleProducts } from '~/utils/sampleProducts'
+import { sampleProducts } from '~/utils/sampleProducts'
+import { getCache, setCache } from '~/server/utils/cache'
 
 export default defineEventHandler(async (event) => {
   try {
-    // Try to connect to database
-    let useDatabase = true
-    try {
-      await connectDB()
-    } catch (dbError) {
-      console.warn('Database not available, using sample data:', dbError.message)
-      useDatabase = false
-    }
-
     const query = getQuery(event)
     const {
       q = '',           // search query
@@ -27,6 +19,37 @@ export default defineEventHandler(async (event) => {
       brand = '',       // brand filter
       rating = 0        // minimum rating
     } = query
+
+    // Create cache key based on all search parameters
+    const cacheKey = `search:${JSON.stringify({
+      q: q.trim(),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sortBy,
+      platforms,
+      minPrice: Number(minPrice),
+      maxPrice: Number(maxPrice),
+      location: location.trim(),
+      category: category.trim(),
+      brand: brand.trim(),
+      rating: Number(rating)
+    })}`;
+
+    // Check cache first
+    const cachedResult = await getCache(cacheKey);
+    if (cachedResult) {
+      console.log(`[CACHE] Returning cached search results for query: ${q}`);
+      return cachedResult;
+    }
+
+    // Try to connect to database
+    let useDatabase = true
+    try {
+      await connectDB()
+    } catch (dbError) {
+      console.warn('Database not available, using sample data:', dbError.message)
+      useDatabase = false
+    }
 
     // Build search criteria
     const searchCriteria = {
@@ -327,6 +350,9 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
+
+    // Save result to cache
+    await setCache(cacheKey, response)
 
     return response
 
